@@ -21,6 +21,13 @@ if(!class_exists("WP_DB_Updater")) {
 		protected $version_key;
 
 		/**
+		 * Skip update procedures for new installations
+		 * 
+		 * @var boolean
+		 */
+		protected $skip_new;
+
+		/**
 		 * Version in database
 		 * @var string
 		 */
@@ -45,9 +52,10 @@ if(!class_exists("WP_DB_Updater")) {
 		 * @param string  $version_key
 		 * @param string  $plugin_version
 		 */
-		public function __construct($version_key,$plugin_version) {
+		public function __construct($version_key,$plugin_version,$skip_new = false) {
 			$this->version_key = $version_key;
 			$this->plugin_version = $plugin_version;
+			$this->skip_new = $skip_new;
 			
 			add_action('wp_loaded',array($this,'run'));
 		}
@@ -62,7 +70,7 @@ if(!class_exists("WP_DB_Updater")) {
 			if(current_user_can(self::CAPABILITY)) {
 				$install_success = true;
 				// Check if database is up to date
-				if(!$this->is_version_installed($this->plugin_version)) {
+				if(!$this->skip_upgrade() && !$this->is_version_installed($this->plugin_version)) {
 					//Run update installations
 					foreach ($this->versions as $version => $callback) {
 						if(!$this->is_version_installed($version) && function_exists($callback)) {
@@ -148,6 +156,16 @@ if(!class_exists("WP_DB_Updater")) {
 		 */
 		protected function is_version_installed($version) {
 			return version_compare($this->get_installed_version(),$version,">=");
+		}
+
+		/**
+		 * Is this a new installation of the plugin
+		 *
+		 * @since  1.1
+		 * @return boolean
+		 */
+		protected function skip_upgrade() {
+			return $this->skip_new && $this->get_installed_version() == '0';
 		}
 	}
 }

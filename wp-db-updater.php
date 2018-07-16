@@ -148,24 +148,40 @@ if(!class_exists("WP_DB_Updater")) {
 		}
 
 		/**
-		 * Check if a version is installed in db
+		 * Is version already installed in db
 		 *
 		 * @since  1.0
 		 * @param  string  $version
 		 * @return boolean
 		 */
 		protected function is_version_installed($version) {
-			return version_compare($this->get_installed_version(),$version,">=");
+			return version_compare($this->get_installed_version(), $version, ">=");
+		}
+
+		/**
+		 * Is this a new installation of the plugin
+		 * Is version uninstalled and below or equal to latest uninstalled version
+		 *
+		 * @since  1.1
+		 * @since  2.0
+		 * @param  string  $version
+		 * @return boolean
+		 */
+		protected function skip_upgrade() {
+			return $this->skip_new && $this->get_installed_version() == '0';
+		protected function is_version_installable($version) {
+			return !$this->is_version_installed($version) && version_compare($this->plugin_version, $version, ">=");
 		}
 
 		/**
 		 * Is this a new installation of the plugin
 		 *
-		 * @since  1.1
-		 * @return boolean
+		 * @since  2.0
+		 * @return boolean 
 		 */
-		protected function skip_upgrade() {
-			return $this->skip_new && $this->get_installed_version() == '0';
+		protected function is_new_install() {
+			return $this->get_installed_version() == '0';
+		}
 		}
 	}
 }

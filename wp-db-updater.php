@@ -67,32 +67,29 @@ if(!class_exists("WP_DB_Updater")) {
 		 * @return void
 		 */
 		public function run() {
-			if(current_user_can(self::CAPABILITY)) {
-				$install_success = true;
-				// Check if database is up to date
-				if(!$this->skip_upgrade() && !$this->is_version_installed($this->plugin_version)) {
-					//Run update installations
-					foreach ($this->versions as $version => $callback) {
-						if(!$this->is_version_installed($version) && function_exists($callback)) {
-							$install_success = $callback();
-							if($install_success) {
-								$this->set_installed_version($version);
-							} else {
-								break;
-							}
-						}
-					}
+			if(!current_user_can(self::CAPABILITY)) {
+				return;
+			}
+
+			if(!($this->is_new_install() && $this->skip_new)) {
+
+				uksort($this->versions, 'version_compare');
+
+				//Run update installations
+				foreach ($this->versions as $version => $callbacks) {
+					do_action($this->get_action_name($version));
+					$this->set_installed_version($version);
 				}
-				//If no update exist for current version, just set it
-				if($install_success && !$this->is_version_installed($this->plugin_version)) {
-					$this->set_installed_version($this->plugin_version);
-				}
+			}
+
+			//If no update exist for current version, just set it
+			if(!$this->is_version_installed($this->plugin_version)) {
+				$this->set_installed_version($this->plugin_version);
 			}
 		}
 
 		/**
-		 * Register versions and their callbacks
-		 * to update queue
+		 * Register version upgrade callback to queue
 		 *
 		 * @since  1.0
 		 * @param  string  $version
@@ -100,7 +97,39 @@ if(!class_exists("WP_DB_Updater")) {
 		 * @return void
 		 */
 		public function register_version_update($version,$callback) {
-			$this->versions[$version] = $callback;
+			if(!$this->is_version_installable($version)) {
+				return;
+			}
+
+			if(!isset($this->versions[$version])) {
+				$this->versions[$version] = array();
+			}
+
+			$this->versions[$version][] = $callback;
+			add_action($this->get_action_name($version), $callback);
+		}
+
+		/**
+		 * Unregister version upgrade callback from queue
+		 *
+		 * @since  2.0
+		 * @param  string  $version
+		 * @param  string  $callback
+		 * @return void
+		 */
+		public function unregister_version_update($version, $callback) {
+			if(!isset($this->versions[$version])) {
+				return;
+			}
+
+			$pos = array_search($callback, $this->versions[$version]);
+
+			if($pos === false) {
+				return;
+			}
+
+			unset($this->versions[$version][$pos]);
+			remove_action($this->get_action_name($version), $callback);
 		}
 
 		/**
@@ -159,16 +188,12 @@ if(!class_exists("WP_DB_Updater")) {
 		}
 
 		/**
-		 * Is this a new installation of the plugin
 		 * Is version uninstalled and below or equal to latest uninstalled version
 		 *
-		 * @since  1.1
 		 * @since  2.0
 		 * @param  string  $version
 		 * @return boolean
 		 */
-		protected function skip_upgrade() {
-			return $this->skip_new && $this->get_installed_version() == '0';
 		protected function is_version_installable($version) {
 			return !$this->is_version_installed($version) && version_compare($this->plugin_version, $version, ">=");
 		}
@@ -182,8 +207,16 @@ if(!class_exists("WP_DB_Updater")) {
 		protected function is_new_install() {
 			return $this->get_installed_version() == '0';
 		}
+
+		/**
+		 * @since  2.0
+		 * @param  string  $version
+		 * @return string
+		 */
+		protected function get_action_name($version) {
+			return __CLASS__.'/'.$this->version_key.'/'.$version;
 		}
 	}
 }
 
-//eol
+//

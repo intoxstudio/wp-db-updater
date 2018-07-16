@@ -1,9 +1,10 @@
 <?php
 /**
  * @package wp-db-updater
- * @version 1.0
- * @copyright Joachim Jensen <jv@intox.dk>
+ * @version 2.0
+ * @author Joachim Jensen <jv@intox.dk>
  * @license GPLv3
+ * @copyright 2018 by Joachim Jensen
  */
 
 if(!class_exists("WP_DB_Updater")) {
@@ -34,7 +35,7 @@ if(!class_exists("WP_DB_Updater")) {
 		protected $installed_version;
 
 		/**
-		 * Version of plugin
+		 * New version of plugin
 		 * @var string
 		 */
 		protected $plugin_version;
@@ -46,18 +47,19 @@ if(!class_exists("WP_DB_Updater")) {
 		protected $versions = array();
 
 		/**
-		 * Constructor
-		 *
 		 * @since 1.0
 		 * @param string  $version_key
 		 * @param string  $plugin_version
+		 * @param boolean $skip_new
 		 */
-		public function __construct($version_key,$plugin_version,$skip_new = false) {
+		public function __construct($version_key, $plugin_version, $skip_new = false) {
 			$this->version_key = $version_key;
 			$this->plugin_version = $plugin_version;
 			$this->skip_new = $skip_new;
 			
-			add_action('wp_loaded',array($this,'run'));
+			if(is_admin()) {
+				add_action('wp_loaded',array($this,'run'));
+			}
 		}
 
 		/**

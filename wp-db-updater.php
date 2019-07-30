@@ -7,14 +7,14 @@
  * @copyright 2018 by Joachim Jensen
  */
 
-if (!class_exists("WP_DB_Updater")) {
+if (!class_exists('WP_DB_Updater')) {
     class WP_DB_Updater
     {
 
         /**
          * Required capability to run updates
          */
-        const CAPABILITY  = "update_plugins";
+        const CAPABILITY  = 'update_plugins';
 
         /**
          * Key where installed_version is stored
@@ -195,7 +195,7 @@ if (!class_exists("WP_DB_Updater")) {
          */
         protected function is_version_installed($version)
         {
-            return version_compare($this->get_installed_version(), $version, ">=");
+            return version_compare($this->get_installed_version(), $version, '>=');
         }
 
         /**
@@ -207,7 +207,7 @@ if (!class_exists("WP_DB_Updater")) {
          */
         protected function is_version_installable($version)
         {
-            return !$this->is_version_installed($version) && version_compare($this->plugin_version, $version, ">=");
+            return !$this->is_version_installed($version) && version_compare($this->plugin_version, $version, '>=');
         }
 
         /**
@@ -232,5 +232,3 @@ if (!class_exists("WP_DB_Updater")) {
         }
     }
 }
-
-//
